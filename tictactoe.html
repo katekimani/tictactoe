@@ -2,25 +2,28 @@
 <html>
 <head>
 	<title> tictactoe </title>
+	<style type="text/css">
+		.board {
+			width:"60px";
+			height:"60px";
+			background-color: #ff8;
+		}
+	</style>
 </head>
 <body>
 <div>
 <table border="1" width="200px" height="200px">
-	<tr><td class="board" width = "60px" height="60px" id="1" onclick="setPlay(id)"></td><td class="board" width = "60px" height="60px" id="2" onclick="setPlay(id)"></td><td class="board" width = "60px" height="60px" id="3" onclick="setPlay(id)"></td></tr>
-	<tr><td class="board" width = "60px" height="60px" id="4" onclick="setPlay(id)"></td><td class="board" width = "60px" height="60px" id="5" onclick="setPlay(id)"></td><td class="board" width = "60px" height="60px" id="6" onclick="setPlay(id)"></td></tr>
-	<tr><td class="board" width = "60px" height="60px" id="7" onclick="setPlay(id)"></td><td class="board" width = "60px" height="60px" id="8" onclick="setPlay(id)"></td><td class="board" width = "60px" height="60px" id="9" onclick="setPlay(id)"></td></tr>
+	<tr><td class="board" id="1" onclick="setPlay(id)"></td><td class="board" id="2" onclick="setPlay(id)"></td><td class="board" id="3" onclick="setPlay(id)"></td></tr>
+	<tr><td class="board" id="4" onclick="setPlay(id)"></td><td class="board" id="5" onclick="setPlay(id)"></td><td class="board" id="6" onclick="setPlay(id)"></td></tr>
+	<tr><td class="board" id="7" onclick="setPlay(id)"></td><td class="board" id="8" onclick="setPlay(id)"></td><td class="board" id="9" onclick="setPlay(id)"></td></tr>
 </table>
 <button id="10" onclick="setAction(id)">Start Game</button>
 <button id="11" onclick="setAction('status')">Game Status</button>
 </div>
 <script type="text/javascript">
-var playedCells = [];
+
 var symbols = ['X','O'];
-var currentPlayer = 1;
-var winSequence = [[1,2,3],[1,4,7],[1,5,9],[2,5,8],[3,6,9],[3,5,7],[4,5,6],[7,8,9]];
-var progress1 = [];
-var progress2 = [];
-var gameid = 9;
+var gameid;
 
 function setAction(e){
 	if (e == 10){
@@ -29,14 +32,11 @@ function setAction(e){
 		for (var i = 0; i < b.length; i++) {
 			b[i].innerHTML = " ";	
 		}
-		playedCells = [];
-		progress1 = [];
-		progress2 = [];
-		currentPlayer = 1;
-		// serverPOST('start',null);
-		// console.log("THE response ", json);
+
 		post("http://localhost:3000/game/start", null).then(JSON.parse).then(function(response){
-        	console.log("The returned start response is ", response);
+			gameid = response.data.attributes.game_id;
+			alert('Game #'+gameid +' is now in progress');
+   
         }, function(error){ 
         	console.error("Failed ", error);
         })
@@ -44,7 +44,8 @@ function setAction(e){
 	} else {
 
         get("http://localhost:3000/game/status?gameid="+gameid).then(JSON.parse).then(function(response) {
-        	console.log("The status response is ", response);
+        
+        	confirm("The current game is " + response.data.attributes.gameState + "\nIts winner is " + response.data.attributes.winner);
         }, function(error){
         	console.error("Failed ", error);
         })
@@ -53,63 +54,26 @@ function setAction(e){
 
 function setPlay(x) {
 	var h = document.getElementById(x);
-		playedCells.push(x);
-		var lgt = playedCells.length;
-		
-		if( lgt % 2 != 0) {
-			progress1.push(x);
-			h.innerHTML = symbols[0];
-			if(progress1.length >= 3){
-				checkWin(progress1);
-			}
-			currentPlayer = 2;
-		} else {
-			progress2.push(x);
-			h.innerHTML = symbols[1];
-			if(progress2.length >= 3){
-				checkWin(progress2);
-			}
-			currentPlayer = 1;
-		}
-		var play= {player: currentPlayer,
-		            move: x,
-		            gameid: gameid
-		            };
 
-		console.log("The play array is ", play);
-        post("http://localhost:3000/game/play", play).then(JSON.parse).then(function(response){
-        	console.log("The returned play response is ", response);
+	var play= {  move: x,
+	            gameid: gameid
+	            };
+
+    post("http://localhost:3000/game/play", play).then(JSON.parse).then(function(response){
+        if (response.data.attributes.player == 1)
+       	    { h.innerHTML = symbols[0]; }
+        else
+            { h.innerHTML = symbols[1]; }
+
+        if (response.data.attributes.isWin == 1 )
+        	{ alert('Game Over. Player ' + response.data.attributes.player + 'Wins !'); }
+        else if (response.data.attributes.isWin == 2 )
+        	{ alert ('Game Over. Its a TIE!');}
+        	
         }, function(error){ 
         	console.error("Failed ", error);
         })
 }
-
-function checkWin(play){
-	var play2 = [];
-	for (var p = 0; p < play.length ; p++ ) {
-		 play2[p] = parseInt(play[p]);
-	}
-	for (var w = 0; w < winSequence.length; w++) {
-		var a = play2.indexOf(winSequence[w][0]) > -1; 
-        var b =	play2.indexOf(winSequence[w][1]) > -1; 
-        var c =	play2.indexOf(winSequence[w][2]) > -1; 
-
-
-        if ( a === true && b === true && c === true) 
-        {
-        	console.log('Game WON by ',currentPlayer);
-        	alert("You win!");
-         	break;
-        }
-         	
-	}
-	if (playedCells.length == 9 ) {
- 	    console.log('Game Over, Its a TIE');
- 	    } else {
- 	    console.log('Continue play');	
- 	    }	
-}
-
 
 function get(url){
 	return new Promise(function(resolve, reject){
@@ -152,7 +116,6 @@ function post(url, data){
 			reject(Error("Network Error"));
 		};
 		var json = JSON.stringify({data});
-		console.log("The post array is ", json);
 		req.send(json);
 	});
 }
