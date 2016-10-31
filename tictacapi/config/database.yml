@@ -23,3 +23,24 @@ test:
 production:
   <<: *default
   database: db/production.sqlite3
+
+# # If using postgresql, please uncomment the section below
+# default: &default
+#  adapter: postgresql
+#  pool: 5
+#  timeout: 5000
+#  encoding: unicode
+#  host: localhost
+#  port: 5432
+
+#development:
+#  <<: *default
+#database: tictactoe_dev
+#username: postgres
+#password: <%= ENV['PG_DEV_DB_PASSWORD'] %>
+# Warning: The database defined as "test" will be erased and
+# re-generated from your development database when you run "rake".
+# Do not set this db to the same as development or production.
+#test:
+#  <<: *default
+#database: tictactoe_test 

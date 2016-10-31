@@ -1,6 +1,5 @@
 class GamesController < ApplicationController
-	# skip_before_action :ensure_authorization_token_exists, :authenticate_user
-	before_action :set_game, only:[:play]
+before_action :set_game, only:[:play]
 
 $moves = []
 $currentPlayer = 1
@@ -14,11 +13,11 @@ def start
 		render json: { data: { attributes: { game_id: @game.id } } }
 	else
 		render json: { errors: [{
-                                "status" => "401",
+                                "status" => "418",
                                 "title" => "Game not started",
                                 "detail" => "Game not created try again"
                               }] 
-                    }, :status => 401
+                    }, :status => 422
     end
     $moves = []
     $currentPlayer = 1
@@ -28,16 +27,15 @@ end
 
 def status
 	@status = Game.find(params[:gameid])
-	# puts @status.status
+
 	render json: { data: { attributes: { currentPlayer: $currentPlayer, gameState: @status.status, winner: @status.winner }}}
 end
 
 def play
-		
 	if (($moves.length < 1) || (!$moves.include? game_params[:move]))
 	   $moves.push(game_params[:move])
 
-	   @playmove = @game.plays.new(player: game_params[:player], move: game_params[:move])
+	   @playmove = @game.plays.new(player: $currentPlayer, move: game_params[:move])
 
 	   if ( @playmove.save )
 		   	if ($currentPlayer == 1)
@@ -52,56 +50,44 @@ def play
 		   	
 		  render json: { data: { attributes: { player: @playmove.player, move: @playmove.move, isWin: @win  }}}
        else
-			render json: {errors: [{"status" => "643", "title" => "move not saved"}]}
+			render json: {errors: [{"status" => "422", "title" => "move not saved"}]}, :status => 422
 		end
     else
 		render json: { errors: [{
-                                "status" => "404",
+                                "status" => "422",
                                 "title" => "Invalid move",
                                 "detail" => "Move already played"
                               }] 
-                    }
+                    }, :status => 422
 	end
 end
 
 def checkWin(progress)
-	puts "The moves array",$moves.inspect
-	puts "The progress passed array",progress.inspect
-	# puts "The progress2 array",$progress2.inspect
+	$winSequence.each do |i,j,k|
+	# print ("i=#{i},j=#{j},k=#{k}\n")
+		@a = progress.include? "#{i}"
+		@b = progress.include? "#{j}"
+		@c = progress.include? "#{k}"
+
+			if (@a == true && @b == true && @c == true)
+				@winstate = @game.update_attributes(status: "Completed", winner: $currentPlayer)
+				return 1
+			end
+	end
+	
 	if ($moves.length == 9)
 		@winstate = @game.update_attributes(status: "Completed", winner: "Tie")
 		puts @winstate.inspect
 		return 2
-		# render json: { data: { attributes: { gameState: 'Completed', winner: 'Tie'}}}
 	else
-		$winSequence.each do |i,j,k|
-			print ("i=#{i},j=#{j},k=#{k}\n")
-			# puts "#{i}".inspect
-			@a = progress.include? "#{i}"
-			# puts @a.inspect
-			@b = progress.include? "#{j}"
-			# puts @b.inspect
-			@c = progress.include? "#{k}"
-			# puts @c.inspect
-			if (@a == true && @b == true && @c == true)
-				puts "You win"
-				@winstate = @game.update_attributes(status: "Completed", winner: $currentPlayer)
-				return 1
-			else
-				return 0 
-			end
-		end
-		
+		return 0
 	end
-
-	# @wins = @game.plays.group(:player, :move).count
-	# 	  puts @wins.inspect
 end
 
 
 private
 def game_params
-	params.require(:data).permit(:gameid, :player, :move)
+	params.require(:data).permit(:gameid, :move)
 end
 
 def set_game
@@ -109,4 +95,3 @@ def set_game
 end
 
 end
-

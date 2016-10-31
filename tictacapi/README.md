@@ -8,7 +8,7 @@ This game version requires the target system to have installed:
 	- Ruby 2.2.5
 	- Rails 5
 	- Javascript
-	- Postgresql 
+	- Postgresql or SQLite
 
 * Setup 
 
