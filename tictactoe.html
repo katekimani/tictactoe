@@ -1,0 +1,157 @@
+<!doctype html>
+<html>
+<head>
+	<title> tictactoe </title>
+</head>
+<body>
+<div>
+<table border="1" width="200px" height="200px">
+	<tr><td class="board" width = "60px" height="60px" id="1" onclick="setPlay(id)"></td><td class="board" width = "60px" height="60px" id="2" onclick="setPlay(id)"></td><td class="board" width = "60px" height="60px" id="3" onclick="setPlay(id)"></td></tr>
+	<tr><td class="board" width = "60px" height="60px" id="4" onclick="setPlay(id)"></td><td class="board" width = "60px" height="60px" id="5" onclick="setPlay(id)"></td><td class="board" width = "60px" height="60px" id="6" onclick="setPlay(id)"></td></tr>
+	<tr><td class="board" width = "60px" height="60px" id="7" onclick="setPlay(id)"></td><td class="board" width = "60px" height="60px" id="8" onclick="setPlay(id)"></td><td class="board" width = "60px" height="60px" id="9" onclick="setPlay(id)"></td></tr>
+</table>
+<button id="10" onclick="setAction(id)">Start Game</button>
+<button id="11" onclick="setAction('status')">Game Status</button>
+</div>
+<script type="text/javascript">
+var playedCells = [];
+var symbols = ['X','O'];
+var currentPlayer = 1;
+var winSequence = [[1,2,3],[1,4,7],[1,5,9],[2,5,8],[3,6,9],[3,5,7],[4,5,6],[7,8,9]];
+var progress1 = [];
+var progress2 = [];
+var gameid = 9;
+
+function setAction(e){
+	// console.log('Button clicked for', e);
+	if (e == 10){
+		// console.log ('Inside start');
+		var b = document.body.getElementsByClassName('board');
+		
+		for (var i = 0; i < b.length; i++) {
+			b[i].innerHTML = " ";	
+		}
+		playedCells = [];
+		progress1 = [];
+		progress2 = [];
+		currentPlayer = 1;
+		serverPOST('start',null);
+		console.log("THE response ", json);
+		
+	} else {
+		// console.log("Inside status");
+		// console.log('The already played cells ', playedCells);
+  //       console.log('The current player is', currentPlayer);
+  //       console.log('Player 1 game sequence is ', progress1);
+  //       console.log('Player 2 game sequence is ', progress2);
+        // var status = [ {currentPlayer: currentPlayer,
+        // 			   playedCells: playedCells,
+        // 			   gameState: 'completed',
+        // 			   gameScore: 'Win'}];
+        // console.log(status);
+        
+        serverGET('status?gameid='+gameid);
+        
+        
+	}
+}
+
+function setPlay(x) {
+	var h = document.getElementById(x);
+	// if ( playedCells.indexOf(x) === -1) {
+		playedCells.push(x);
+		var lgt = playedCells.length;
+		
+		if( lgt % 2 != 0) {
+			progress1.push(x);
+			h.innerHTML = symbols[0];
+			if(progress1.length >= 3){
+				checkWin(progress1);
+			}
+			currentPlayer = 2;
+		} else {
+			progress2.push(x);
+			h.innerHTML = symbols[1];
+			if(progress2.length >= 3){
+				checkWin(progress2);
+			}
+			currentPlayer = 1;
+		}
+		var play= {player: currentPlayer,
+		            move: x,
+		            gameid: gameid
+		            };
+
+		serverPOST('play',play);
+
+	
+	// } else { 
+	// 	console.log('Cell already played');
+	// }
+}
+
+function checkWin(play){
+	var play2 = [];
+	for (var p = 0; p < play.length ; p++ ) {
+		 play2[p] = parseInt(play[p]);
+	}
+	for (var w = 0; w < winSequence.length; w++) {
+		var a = play2.indexOf(winSequence[w][0]) > -1; 
+        var b =	play2.indexOf(winSequence[w][1]) > -1; 
+        var c =	play2.indexOf(winSequence[w][2]) > -1; 
+
+		// console.log('The result 0 ', play2.indexOf(winSequence[w][0]), 'The var result ', a );
+  //       console.log('The result 1 ', play2.indexOf(winSequence[w][1]), 'The var result ', b );
+  //       console.log('The result 2 ', play2.indexOf(winSequence[w][2]), 'The var result ', c );
+        if ( a === true && b === true && c === true) 
+        {
+        	console.log('Game WON by ',currentPlayer);
+        	alert("You win!");
+         	break;
+        }
+         	
+	}
+	if (playedCells.length == 9 ) {
+ 	    console.log('Game Over, Its a TIE');
+ 	    } else {
+ 	    console.log('Continue play');	
+ 	    }	
+}
+
+function serverPOST(urlpart, data){
+	xhr = new XMLHttpRequest();
+	var url = 'http://localhost:3000/game/'+urlpart;
+	xhr.open("POST", url, true);
+	xhr.setRequestHeader("Content-Type", "application/json");
+	xhr.onreadystatechange = function () {
+		if (xhr.readyState == 4 && xhr.status == 200 ){
+			var json = JSON.parse(xhr.responseText);
+			console.log(json);
+			return json;
+		}
+	}
+
+	var data = JSON.stringify({data});
+	console.log(data);
+	xhr.send(data);
+}
+
+function serverGET(urlpart){
+	xhr = new XMLHttpRequest();
+	var url = "http://localhost:3000/game/"+urlpart;
+	xhr.open("GET", url, true);
+	xhr.setRequestHeader("Content-Type","application/json");
+	xhr.onreadystatechange = function() {
+		if(xhr.readyState == 4 && xhr.status == 200){
+			var json = JSON.parse(xhr.responseText);
+			console.log(json);
+			return json;
+
+		}
+	}
+	xhr.send();
+}
+
+</script>
+</body>
+</html>
