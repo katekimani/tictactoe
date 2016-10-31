@@ -23,9 +23,7 @@ var progress2 = [];
 var gameid = 9;
 
 function setAction(e){
-	// console.log('Button clicked for', e);
 	if (e == 10){
-		// console.log ('Inside start');
 		var b = document.body.getElementsByClassName('board');
 		
 		for (var i = 0; i < b.length; i++) {
@@ -35,30 +33,26 @@ function setAction(e){
 		progress1 = [];
 		progress2 = [];
 		currentPlayer = 1;
-		serverPOST('start',null);
-		console.log("THE response ", json);
+		// serverPOST('start',null);
+		// console.log("THE response ", json);
+		post("http://localhost:3000/game/start", null).then(JSON.parse).then(function(response){
+        	console.log("The returned start response is ", response);
+        }, function(error){ 
+        	console.error("Failed ", error);
+        })
 		
 	} else {
-		// console.log("Inside status");
-		// console.log('The already played cells ', playedCells);
-  //       console.log('The current player is', currentPlayer);
-  //       console.log('Player 1 game sequence is ', progress1);
-  //       console.log('Player 2 game sequence is ', progress2);
-        // var status = [ {currentPlayer: currentPlayer,
-        // 			   playedCells: playedCells,
-        // 			   gameState: 'completed',
-        // 			   gameScore: 'Win'}];
-        // console.log(status);
-        
-        serverGET('status?gameid='+gameid);
-        
-        
+
+        get("http://localhost:3000/game/status?gameid="+gameid).then(JSON.parse).then(function(response) {
+        	console.log("The status response is ", response);
+        }, function(error){
+        	console.error("Failed ", error);
+        })
 	}
 }
 
 function setPlay(x) {
 	var h = document.getElementById(x);
-	// if ( playedCells.indexOf(x) === -1) {
 		playedCells.push(x);
 		var lgt = playedCells.length;
 		
@@ -82,12 +76,12 @@ function setPlay(x) {
 		            gameid: gameid
 		            };
 
-		serverPOST('play',play);
-
-	
-	// } else { 
-	// 	console.log('Cell already played');
-	// }
+		console.log("The play array is ", play);
+        post("http://localhost:3000/game/play", play).then(JSON.parse).then(function(response){
+        	console.log("The returned play response is ", response);
+        }, function(error){ 
+        	console.error("Failed ", error);
+        })
 }
 
 function checkWin(play){
@@ -100,9 +94,7 @@ function checkWin(play){
         var b =	play2.indexOf(winSequence[w][1]) > -1; 
         var c =	play2.indexOf(winSequence[w][2]) > -1; 
 
-		// console.log('The result 0 ', play2.indexOf(winSequence[w][0]), 'The var result ', a );
-  //       console.log('The result 1 ', play2.indexOf(winSequence[w][1]), 'The var result ', b );
-  //       console.log('The result 2 ', play2.indexOf(winSequence[w][2]), 'The var result ', c );
+
         if ( a === true && b === true && c === true) 
         {
         	console.log('Game WON by ',currentPlayer);
@@ -118,38 +110,51 @@ function checkWin(play){
  	    }	
 }
 
-function serverPOST(urlpart, data){
-	xhr = new XMLHttpRequest();
-	var url = 'http://localhost:3000/game/'+urlpart;
-	xhr.open("POST", url, true);
-	xhr.setRequestHeader("Content-Type", "application/json");
-	xhr.onreadystatechange = function () {
-		if (xhr.readyState == 4 && xhr.status == 200 ){
-			var json = JSON.parse(xhr.responseText);
-			console.log(json);
-			return json;
-		}
-	}
 
-	var data = JSON.stringify({data});
-	console.log(data);
-	xhr.send(data);
+function get(url){
+	return new Promise(function(resolve, reject){
+		var req = new XMLHttpRequest();
+		req.open('GET', url);
+
+		req.onload = function() {
+			if(req.status == 200) {
+				resolve(req.response);
+			} else {
+				reject(Error(req.statusText));
+			}
+		};
+
+		//Handle network errors
+		req.onerror = function(){
+			reject(Error("Network Error"));
+		};
+
+		req.send();
+	});
 }
 
-function serverGET(urlpart){
-	xhr = new XMLHttpRequest();
-	var url = "http://localhost:3000/game/"+urlpart;
-	xhr.open("GET", url, true);
-	xhr.setRequestHeader("Content-Type","application/json");
-	xhr.onreadystatechange = function() {
-		if(xhr.readyState == 4 && xhr.status == 200){
-			var json = JSON.parse(xhr.responseText);
-			console.log(json);
-			return json;
+function post(url, data){
+	return new Promise(function(resolve, reject){
+		var req = new XMLHttpRequest();
+		req.open('POST', url);
+		req.setRequestHeader("Content-Type", "application/json");
 
-		}
-	}
-	xhr.send();
+		req.onload = function(){
+			if(req.status == 200) {
+				resolve(req.response);
+			} else {
+				reject(Error(req.statusText));
+			}
+		};
+
+		//Handle network errors
+		req.onerror = function(){
+			reject(Error("Network Error"));
+		};
+		var json = JSON.stringify({data});
+		console.log("The post array is ", json);
+		req.send(json);
+	});
 }
 
 </script>

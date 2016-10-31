@@ -5,7 +5,7 @@ This is a simple guide to get the tictactoe game up and running in a local machi
 
 * System dependencies
 This game version requires the target system to have installed:
-	- Ruby 
+	- Ruby 2.2.5
 	- Rails 5
 	- Javascript
 	- Postgresql 
@@ -17,7 +17,7 @@ To install, clone the repo in the target system
 
 **For the back end
 1. From a command line, open the tictactoe repo directory.
-2. `cd` or `dir` to the tictacapi directory
+2. `cd` to the tictacapi directory
 3. Type `rake db:migrate` to create the database
 4. When its completed successfully, 
 5. Type `rails s` to start the server
